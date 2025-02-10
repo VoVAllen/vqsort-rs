@@ -104,6 +104,12 @@ extern "C" {
     fn vqsort_u128_descending(data: *mut u128, len: usize);
 }
 
+unsafe extern "C" {fn vq_partialsort_i32(data: *mut i32, len: usize, k: usize);}
+pub fn safe_vq_partialsort_i32(data: &mut [i32], k: usize) {
+    unsafe { vq_partialsort_i32(data.as_mut_ptr(), data.len(), k) };
+}
+
+
 #[rustversion::since(1.77)]
 impl VqsortItem for u128 {
     #[inline]

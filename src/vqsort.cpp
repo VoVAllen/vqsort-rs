@@ -2,6 +2,11 @@
 #include "hwy/base.h"
 
 extern "C" {
+
+void vq_partialsort_i32(int32_t *data, size_t len, size_t k) {
+  VQPartialSort(data, len, k, hwy::SortAscending{});
+}
+
 void vqsort_i16(int16_t *data, size_t len) {
   VQSort(data, len, hwy::SortAscending{});
 }

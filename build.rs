@@ -12,4 +12,10 @@ fn main() {
 
     cc::Build::new().file(file_path).cpp(true).compile("vqsort");
     println!("cargo:rustc-link-lib=static=vqsort");
+
+    // Link against hwy.lib when compiling vqsort
+    // println!("cargo:rustc-link-lib=static=libhwy");
+    println!("cargo:rustc-link-lib=static=hwy");
+    // println!("cargo:rustc-link-lib=static=libhwy-contrib");
+    println!("cargo:rustc-link-lib=static=hwy_contrib");
 }
