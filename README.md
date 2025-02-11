@@ -39,4 +39,6 @@ vsort_rs::select_nth_unstable(&mut numbers, k);
 ```
 
 ## TODO
-Add back miri tests and support u128
+- Add back miri tests
+- Add support u128
+- Make different type as feature flags to reduce compile time and binary size
