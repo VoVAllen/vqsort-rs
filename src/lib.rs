@@ -13,122 +13,93 @@ pub fn sort_descending<T: VqsortItem>(data: &mut [T]) {
     VqsortItem::sort_descending(data);
 }
 
+pub fn partial_sort<T: VqsortItem>(data: &mut [T], k: usize) {
+    VqsortItem::partial_sort(data, k);
+}
+
+pub fn partial_sort_descending<T: VqsortItem>(data: &mut [T], k: usize) {
+    VqsortItem::partial_sort_descending(data, k);
+}
+
+pub fn select_nth_unstable<T: VqsortItem>(data: &mut [T], k: usize) {
+    VqsortItem::select_nth_unstable(data, k);
+}
+
+pub fn select_nth_unstable_descending<T: VqsortItem>(data: &mut [T], k: usize) {
+    VqsortItem::select_nth_unstable_descending(data, k);
+}
+
 /// A trait for types that can be sorted.
 pub trait VqsortItem: Sized {
     fn sort(data: &mut [Self]);
     fn sort_descending(data: &mut [Self]);
+    fn partial_sort(data: &mut [Self], k: usize);
+    fn partial_sort_descending(data: &mut [Self], k: usize);
+    fn select_nth_unstable(data: &mut [Self], k: usize);
+    fn select_nth_unstable_descending(data: &mut [Self], k: usize);
 }
 
 macro_rules! vqsort_impl {
     ($($t:ty)*) => ($(
         paste::paste! {
-            extern "C" {
+            extern "C" {                
                 fn [<vqsort_ $t>](data: *mut $t, len: usize);
                 fn [<vqsort_ $t _descending>](data: *mut $t, len: usize);
+                fn [<vqpartialsort_ $t>](data: *mut $t, len: usize, k: usize);
+                fn [<vqpartialsort_ $t _descending>](data: *mut $t, len: usize, k: usize);
+                fn [<vqselect_ $t>](data: *mut $t, len: usize, k: usize);
+                fn [<vqselect_ $t _descending>](data: *mut $t, len: usize, k: usize);
             }
 
             impl VqsortItem for $t {
                 #[inline]
                 fn sort(data: &mut [Self]) {
-                    if cfg!(miri) {
-                        data.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
-                    } else {
                         unsafe { [<vqsort_ $t>](data.as_mut_ptr(), data.len()) };
-                    }
                 }
 
                 #[inline]
                 fn sort_descending(data: &mut [Self]) {
-                    if cfg!(miri) {
-                        data.sort_unstable_by(|a, b| b.partial_cmp(a).unwrap());
-                    } else {
                         unsafe { [<vqsort_ $t _descending>](data.as_mut_ptr(), data.len()) };
-                    }
                 }
+
+                #[inline]
+                fn partial_sort(data: &mut [Self], k: usize) {
+                        unsafe { [<vqpartialsort_ $t>](data.as_mut_ptr(), data.len(), k) };
+                }
+
+                #[inline]
+                fn partial_sort_descending(data: &mut [Self], k: usize) {
+                        unsafe { [<vqpartialsort_ $t _descending>](data.as_mut_ptr(), data.len(), k) };
+                }
+
+                #[inline]
+                fn select_nth_unstable(data: &mut [Self], k: usize) {
+                        unsafe { [<vqselect_ $t>](data.as_mut_ptr(), data.len(), k) };
+                }
+
+                #[inline]
+                fn select_nth_unstable_descending(data: &mut [Self], k: usize) {
+                        unsafe { [<vqselect_ $t _descending>](data.as_mut_ptr(), data.len(), k) };
+                }
+                
             }
         }
     )*)
 }
 
-vqsort_impl! { i16 u16 i32 u32 i64 u64 f32 f64 }
+vqsort_impl! { i16 u16 i32 u32 i64 u64 f32 f64 K32V32 K64V64}
 
-macro_rules! vqsort_size_impl {
-    ($($size:expr => $t:ty,)*) => ($(
-        paste::paste! {
-            #[cfg(target_pointer_width = "" $size)]
-            #[inline]
-            fn sort(data: &mut [Self]) {
-                if cfg!(miri) {
-                    data.sort_unstable();
-                } else {
-                    unsafe { [<vqsort_ $t>](data.as_mut_ptr().cast(), data.len()) };
-                }
-            }
-
-            #[cfg(target_pointer_width = "" $size)]
-            #[inline]
-            fn sort_descending(data: &mut [Self]) {
-                if cfg!(miri) {
-                    data.sort_unstable_by_key(|&x| core::cmp::Reverse(x));
-                } else {
-                    unsafe { [<vqsort_ $t _descending>](data.as_mut_ptr().cast(), data.len()) };
-                }
-            }
-        }
-    )*)
-}
-
-impl VqsortItem for isize {
-    vqsort_size_impl! {
-        16 => i16,
-        32 => i32,
-        64 => i64,
-    }
-}
-
-impl VqsortItem for usize {
-    vqsort_size_impl! {
-        16 => u16,
-        32 => u32,
-        64 => u64,
-    }
-}
-
-// highway uses a 16-bytes aligned uint128_t.
-// Rust has u128 aligned the same way since 1.77:
-// [#116672](https://github.com/rust-lang/rust/pull/116672)
-#[rustversion::since(1.77)]
-#[allow(improper_ctypes)]
-extern "C" {
-    fn vqsort_u128(data: *mut u128, len: usize);
-    fn vqsort_u128_descending(data: *mut u128, len: usize);
-}
-
-unsafe extern "C" {fn vq_partialsort_i32(data: *mut i32, len: usize, k: usize);}
-pub fn safe_vq_partialsort_i32(data: &mut [i32], k: usize) {
-    unsafe { vq_partialsort_i32(data.as_mut_ptr(), data.len(), k) };
+#[derive(Clone, Copy)]
+#[repr(C, align(8))]
+pub struct K32V32 {
+    pub value: u32,
+    pub key: u32,
 }
 
 
-#[rustversion::since(1.77)]
-impl VqsortItem for u128 {
-    #[inline]
-    fn sort(data: &mut [Self]) {
-        assert_eq!(core::mem::align_of::<Self>(), 16);
-        if cfg!(miri) {
-            data.sort_unstable();
-        } else {
-            unsafe { vqsort_u128(data.as_mut_ptr(), data.len()) };
-        }
-    }
-
-    #[inline]
-    fn sort_descending(data: &mut [Self]) {
-        assert_eq!(core::mem::align_of::<Self>(), 16);
-        if cfg!(miri) {
-            data.sort_unstable_by_key(|&x| core::cmp::Reverse(x));
-        } else {
-            unsafe { vqsort_u128_descending(data.as_mut_ptr(), data.len()) };
-        }
-    }
+#[derive(Clone, Copy)]
+#[repr(C, align(8))]
+pub struct K64V64 {
+    pub value: u64,
+    pub key: u64,
 }
