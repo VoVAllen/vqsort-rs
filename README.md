@@ -38,6 +38,18 @@ let k = 2;
 vsort_rs::select_nth_unstable(&mut numbers, k);
 ```
 
+### Sorting K32V32
+```rust
+let mut numbers = [
+    vsort_rs::K32V32::new(5, 0),
+    vsort_rs::K32V32::new(3, 1),
+    vsort_rs::K32V32::new(8, 2),
+    vsort_rs::K32V32::new(0, 3),
+    vsort_rs::K32V32::new(100, 4),
+];
+vsort_rs::sort(&mut numbers);
+```
+
 ## TODO
 - Add back miri tests
 - Add support u128

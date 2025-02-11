@@ -89,3 +89,16 @@ fn test_safe_vq_partialsort_k32v32_random() {
     // Check that the first k elements are sorted in non-decreasing order.
     assert!(data[..k].windows(2).all(|pair| pair[0].key <= pair[1].key));
 }
+
+// Test K32V32
+#[test]
+fn test_K32V32_basic_example() {
+    let mut numbers = [
+        vsort_rs::K32V32::new(5, 0),
+        vsort_rs::K32V32::new(3, 1),
+        vsort_rs::K32V32::new(8, 2),
+        vsort_rs::K32V32::new(0, 3),
+        vsort_rs::K32V32::new(100, 4),
+    ];
+    vsort_rs::sort(&mut numbers);
+}

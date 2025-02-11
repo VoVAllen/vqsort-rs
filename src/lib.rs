@@ -96,10 +96,21 @@ pub struct K32V32 {
     pub key: u32,
 }
 
+impl K32V32 {
+    pub fn new(key: u32, value: u32) -> Self {
+        K32V32 { key, value }
+    }
+}
 
 #[derive(Clone, Copy)]
 #[repr(C, align(8))]
 pub struct K64V64 {
     pub value: u64,
     pub key: u64,
+}
+
+impl K64V64 {
+    pub fn new(key: u64, value: u64) -> Self {
+        K64V64 { key, value }
+    }
 }
